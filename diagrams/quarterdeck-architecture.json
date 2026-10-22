@@ -1,0 +1,56 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Quarterdeck Research Prototype Architecture",
+    "quality_profile": "showcase",
+    "viewBox": [1280, 760],
+    "views": [
+      {
+        "id": "request-path",
+        "label": "Credential request",
+        "focus": ["hr", "quarterdeck", "workflow", "operator", "piv", "windows"],
+        "note": "Follow a bounded request from identity verification through card preparation and Windows authentication."
+      },
+      {
+        "id": "trust-boundary",
+        "label": "Trust boundary",
+        "focus": ["quarterdeck", "workflow", "directory", "ca", "piv"],
+        "note": "Quarterdeck coordinates customer-controlled authorities but does not hold CA or credential private keys."
+      }
+    ]
+  },
+  "components": [
+    { "id": "hr", "type": "external", "label": "HR verifier", "sublabel": "Identity and approval", "pos": [42, 130], "size": [164, 74] },
+    { "id": "quarterdeck", "type": "frontend", "label": "Quarterdeck", "sublabel": "Razor workflow UI", "pos": [270, 130], "size": [174, 74] },
+    { "id": "workflow", "type": "database", "label": "Workflow store", "sublabel": "SQLite and audit trail", "pos": [270, 310], "size": [174, 74] },
+    { "id": "operator", "type": "external", "label": "IT operator", "sublabel": "Bounded lifecycle actions", "pos": [42, 310], "size": [164, 74] },
+    { "id": "broker", "type": "security", "label": "Local PIV broker", "sublabel": "Constrained device operations", "pos": [510, 130], "size": [188, 74] },
+    { "id": "directory", "type": "backend", "label": "Active Directory", "sublabel": "Accounts, groups and policy", "pos": [764, 60], "size": [182, 74] },
+    { "id": "ca", "type": "security", "label": "AD CS", "sublabel": "Customer-controlled issuance", "pos": [764, 200], "size": [182, 74] },
+    { "id": "piv", "type": "security", "label": "Physical PIV device", "sublabel": "Private key remains on card", "pos": [764, 340], "size": [182, 74] },
+    { "id": "windows", "type": "external", "label": "Windows workstation", "sublabel": "Interactive authentication", "pos": [1010, 270], "size": [190, 74] },
+    { "id": "evidence", "type": "database", "label": "Verification evidence", "sublabel": "Sanitized, hash-bound results", "pos": [510, 500], "size": [188, 74] }
+  ],
+  "boundaries": [
+    { "kind": "security-group", "label": "Quarterdeck application boundary", "wraps": ["quarterdeck", "workflow", "broker"], "pad": 24 },
+    { "kind": "region", "label": "Existing customer-controlled infrastructure", "wraps": ["directory", "ca", "piv", "windows"], "pad": 24 }
+  ],
+  "connections": [
+    { "id": "hr-request", "from": "hr", "to": "quarterdeck", "label": "verified request", "variant": "emphasis", "labelAt": [154, 238] },
+    { "id": "it-action", "from": "operator", "to": "quarterdeck", "label": "authorized action" },
+    { "id": "workflow-record", "from": "quarterdeck", "to": "workflow", "label": "state and audit", "fromSide": "bottom", "toSide": "top", "labelAt": [357, 252] },
+    { "id": "broker-command", "from": "quarterdeck", "to": "broker", "label": "request-bound command", "variant": "security", "labelAt": [477, 218] },
+    { "id": "directory-read", "from": "quarterdeck", "to": "directory", "label": "resolve identity and policy", "variant": "dashed", "labelAt": [610, 66] },
+    { "id": "ca-request", "from": "broker", "to": "ca", "label": "public certificate request", "variant": "security", "labelAt": [520, 246] },
+    { "id": "card-operation", "from": "broker", "to": "piv", "label": "device-internal key operation", "variant": "security", "labelAt": [731, 304] },
+    { "id": "card-logon", "from": "piv", "to": "windows", "label": "PIV authentication", "variant": "emphasis", "labelAt": [978, 438] },
+    { "id": "directory-logon", "from": "windows", "to": "directory", "label": "Kerberos and policy" },
+    { "id": "evidence-write", "from": "workflow", "to": "evidence", "label": "bounded results", "variant": "dashed" },
+    { "id": "broker-evidence", "from": "broker", "to": "evidence", "label": "signed receipts", "variant": "dashed", "labelAt": [604, 454] }
+  ],
+  "cards": [
+    { "dot": "emerald", "title": "Private-key boundary", "items": ["Quarterdeck never possesses CA or credential private keys", "Keys are generated and used inside designated cryptographic hardware"] },
+    { "dot": "amber", "title": "Prototype claim", "items": ["Architecture reflects isolated lab research", "Production readiness and independent certification are not claimed"] }
+  ]
+}
